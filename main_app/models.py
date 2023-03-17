@@ -37,3 +37,7 @@ class Feeding(models.Model):
 
     def __str__(self):
         return f"{self.get_meal_display()} on {self.date}"
+
+    #this will order in descending order for date 
+    class Meta:
+        ordering =['-date']

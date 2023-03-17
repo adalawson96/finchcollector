@@ -4,18 +4,18 @@
 <h1> Finches List</h1>
 
 {% for finch in finches %}
-    <a href="{{ url 'detail' finch.id }}">
+    <a href="{% url 'detail' finch.id %}">
         <div class="card">
             <div class="card-content">
                 <span class="card-title">{{ finch.name }}</span>
                 <p>Origin: {{ finch.origin }}</p>
                 <p>Description: {{ finch.description|linebreaks }}</p>
                 <p>Age: {{finch.age}}</p>
-                <!-- {% if finch.age > 0 %}
+                {% if finch.age > 0 %}
                 <p>Age: {{ finch.age }}</p>
               {% else %}
                 <p>Age: chick</p>
-              {% endif %} -->
+              {% endif %}
             </div>
         </div>
     </a>

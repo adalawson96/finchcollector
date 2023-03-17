@@ -25,7 +25,7 @@
   <!-- New Markup Below -->
   <div class="col s6">
 
-    <form action="{% 'add_feeding' cat.id %}" method="POST">
+    <form action="{% url 'add_feeding' finch.id %}" method="POST">
         {% csrf_token %}
         <!-- Render the inputs -->
         {{ feeding_form.as_p }}

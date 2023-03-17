@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from .models import Finch
 from .forms import FeedingForm
@@ -41,5 +41,9 @@ def add_feeding(request, finch_id):
     #create a ModelForm instance using the data that was submitted in the form
     form = FeedingForm(request.POST)
     if form.is_valid():
-        # we want a model instance but we can't save to the db yet becuase we have not assigned the cat_id FK.
-        
+        # we want a model instance but we can't save to the db yet because we have not assigned the cat_id FK.
+        new_feeding = form.save(commit=False)
+        new_feeding.finch_id = finch_id 
+        new_feeding.save()
+    return redirect('detail', finch_id=finch_id) 
+
