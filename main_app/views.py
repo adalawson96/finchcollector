@@ -22,13 +22,21 @@ def finches_index(request):
 def assoc_toy(request, finch_id, toy_id):
   # Note that you can pass a toy's id instead of the whole object
     Finch.objects.get(id=finch_id).toys.add(toy_id)
-    return redirect('detail', pk=finch_id)
+    return redirect('detail', finch_id=finch_id)
+
+def unassoc_toy(request, finch_id, toy_id):
+  # Note that you can pass a toy's id instead of the whole object
+    Finch.objects.get(id=finch_id).toys.remove(toy_id)
+    return redirect('detail', finch_id=finch_id)
 
 def finches_detail(request, finch_id):
     finch = Finch.objects.get(id=finch_id)
+    #first, create a list of the toy ids that the finch DOes have
+    id_list = finch.toys.all().values_list('id')
+    #query for the toys that the finch doesn't have by using the exclude() method vs the filter()
+    toys_finch_doesnt_have = Toy.objects.exclude(id__in = finch.toys.all().values_list('id'))
     #instantiate feedingform to be rendered
     feeding_form = FeedingForm()
-    toys_finch_doesnt_have = Toy.objects.exclude(id__in = finch.toys.all().values_list('id'))
     return render(request, 'finches/detail.html', {
         'finch': finch, 
         'feeding_form': feeding_form,  
@@ -37,7 +45,7 @@ def finches_detail(request, finch_id):
 
 class FinchCreate(CreateView):
    model = Finch
-   fields = '__all__'
+   fields = ['name', 'origin', 'description', 'age']
 
 class FinchUpdate(UpdateView):
     model = Finch
