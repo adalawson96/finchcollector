@@ -1,10 +1,17 @@
+# import os
+# import uuid
+# import boto3
 from django.shortcuts import render, redirect
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.views.generic.detail import DetailView
-from django.views.generic import ListView
-from .models import Finch
-from .models import Finch, Toy
+# from django.views.generic.detail import DetailView
+from django.views.generic import ListView, DetailView
+from django.contrib.auth import login
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Finch, Toy #,Photo
 from .forms import FeedingForm
+
 
 # Create your views here.
 def home(request):
@@ -13,22 +20,16 @@ def home(request):
 def about(request):
     return render(request, 'about.html')
 
+@login_required
 def finches_index(request):
-    finches = Finch.objects.all()
+    finches = Finch.objects.filter(user=request.user)
+    # another query
+    # finches = request.user.finch_set.all()
     return render(request, 'finches/index.html', {
         'finches': finches
     })
 
-def assoc_toy(request, finch_id, toy_id):
-  # Note that you can pass a toy's id instead of the whole object
-    Finch.objects.get(id=finch_id).toys.add(toy_id)
-    return redirect('detail', finch_id=finch_id)
-
-def unassoc_toy(request, finch_id, toy_id):
-  # Note that you can pass a toy's id instead of the whole object
-    Finch.objects.get(id=finch_id).toys.remove(toy_id)
-    return redirect('detail', finch_id=finch_id)
-
+@login_required
 def finches_detail(request, finch_id):
     finch = Finch.objects.get(id=finch_id)
     #first, create a list of the toy ids that the finch DOes have
@@ -43,40 +44,59 @@ def finches_detail(request, finch_id):
         'toys': toys_finch_doesnt_have,
     })
 
-class FinchCreate(CreateView):
+class FinchCreate(LoginRequiredMixin, CreateView):
    model = Finch
    fields = ['name', 'origin', 'description', 'age']
 
-class FinchUpdate(UpdateView):
+    def form_valid(self, form):
+        #self.request.user is the logged in user
+        form.instance.user = self.request.user
+        #let the CreateView's form_valid method do its regular work (saving the object and redirect)
+        return super().form_valid(form)   
+   
+class FinchUpdate(LoginRequiredMixin, UpdateView):
     model = Finch
     fields = ['origin', 'description', 'age']
 
-class FinchDelete(DeleteView):
+class FinchDelete(LoginRequiredMixin, DeleteView):
     model = Finch
     success_url = '/finches'
 
-class ToyList(ListView):
+@login_required
+def assoc_toy(request, finch_id, toy_id):
+  # Note that you can pass a toy's id instead of the whole object
+    Finch.objects.get(id=finch_id).toys.add(toy_id)
+    return redirect('detail', finch_id=finch_id)
+
+@login_required
+def unassoc_toy(request, finch_id, toy_id):
+  # Note that you can pass a toy's id instead of the whole object
+    Finch.objects.get(id=finch_id).toys.remove(toy_id)
+    return redirect('detail', finch_id=finch_id)
+
+
+class ToyList(LoginRequiredMixin, ListView):
     model = Toy
     template_name = 'toys/toy_list.html'
 
-class ToyDetail(DetailView):
+class ToyDetail(LoginRequiredMixin, DetailView):
     model = Toy
     template_name = 'toys/toy_detail.html'
 
-class ToyCreate(CreateView):
+class ToyCreate(LoginRequiredMixin, CreateView):
     model = Toy
     fields = ('name', 'color')
 
-class ToyUpdate(UpdateView):
+class ToyUpdate(LoginRequiredMixin, UpdateView):
     model = Toy
     fields = ('name', 'color')
 
-class ToyDelete(DeleteView):
+class ToyDelete(LoginRequiredMixin, DeleteView):
     model = Toy
     success_url ='/toys'
 
-
 # POST
+@login_required
 def add_feeding(request, finch_id):
     #create a ModelForm instance using the data that was submitted in the form
     form = FeedingForm(request.POST)
@@ -87,3 +107,19 @@ def add_feeding(request, finch_id):
         new_feeding.save()
     return redirect('detail', finch_id=finch_id) 
 
+def signup(request):
+    error_message = ''
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            # save the user to the db
+            user = form.save()
+            # automatically log in the new user
+            login(request, user)
+            return redirect('index')
+        else:
+            error_message = 'Invalid sign up - try again!'
+    # a bad POST or a GET request so render signup template
+    form = UserCreationForm()
+    context = {'form': form, 'error_message': error_message}
+    return render(request, 'registration/signup.html', context)
