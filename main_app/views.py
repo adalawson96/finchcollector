@@ -45,8 +45,8 @@ def finches_detail(request, finch_id):
     })
 
 class FinchCreate(LoginRequiredMixin, CreateView):
-   model = Finch
-   fields = ['name', 'origin', 'description', 'age']
+    model = Finch
+    fields = ['name', 'origin', 'description', 'age']
 
     def form_valid(self, form):
         #self.request.user is the logged in user
